@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Un Regalo para Ti</title>
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+  <style>
+    body { 
+      background-color: black; 
+      margin: 0; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      height: 100vh; 
+      overflow: hidden; 
+      flex-direction: column;
+    }
+    .container { 
+      text-align: center; 
+      width: 100%; 
+      height: 100%; 
+    }
+    canvas { 
+      background-color: black; 
+      width: 100%; 
+      height: 100%; 
+      display: block;
+    }
+    .footer {
+        position: absolute;
+        bottom: 5vh;
+        width: 100%;
+        text-align: center;
+        color: white;
+    }
+    .footer .message { 
+        font-size: 3vw; 
+        font-family: 'Dancing Script', cursive; 
+        text-shadow: 0 0 10px #ff0; 
+    }
+    .footer audio { 
+        margin-top: 10px; 
+        width: 60vw; 
+        max-width: 400px; 
+        filter: invert(1) sepia(1) saturate(5) hue-rotate(45deg); 
+    }
+
+    /* Ajustes especiales para móviles */
+   @media (max-width: 600px) {
+  .footer .message { font-size: 6vw; }
+  .footer audio { 
+      width: 95vw;   /* Aún más ancho en pantallas chicas */
+      height: 45px;  /* Un poco más alto para que sea tocable con el dedo */
+  }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <canvas id="lienzo"></canvas>
+</div>
+
+<div class="footer">
+  <p class="message">Feliz 21 de septiembre amorcito 🌻💛❤️💛🌻</p>
+  <audio id="background-audio" controls loop>
+    <source src="Floricienta  Flores Amarillas.mp3" type="audio/mpeg">
+  </audio>
+</div>
+
+<script>
+const canvas = document.getElementById("lienzo");
+const ctx = canvas.getContext("2d");
+
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// Escala dinámica con un mínimo para que no se haga muy pequeño
+const designWidth = 1800;
+const designHeight = 800;
+function getScale() {
+    return Math.max(0.5, Math.min(canvas.width / designWidth, canvas.height / designHeight));
+}
+
+function generarFlores() {
+  const scale = getScale();
+  const centerX = canvas.width / 2;
+  return [
+    { x: centerX - 350 * scale, y: 250 * scale, altura: 300 * scale, progreso: 0 },
+    { x: centerX - 100 * scale, y: 200 * scale, altura: 400 * scale, progreso: 0 },
+    { x: centerX + 150 * scale, y: 250 * scale, altura: 350 * scale, progreso: 0 },
+    { x: centerX + 400 * scale, y: 220 * scale, altura: 380 * scale, progreso: 0 },
+    { x: centerX - 220 * scale, y: 450 * scale, altura: 250 * scale, progreso: 0 },
+    { x: centerX + 250 * scale, y: 420 * scale, altura: 280 * scale, progreso: 0 },
+  ];
+}
+
+let flores = generarFlores();
+window.addEventListener("resize", () => {
+    flores = generarFlores();
+});
+
+// Función para dibujar girasol
+function dibujarGirasol(flor) {
+  const { x, y, altura, progreso } = flor;
+  if (progreso <= 0) return;
+
+  const scale = getScale();
+  const alturaActual = altura * Math.min(1, progreso / 0.6);
+  ctx.beginPath();
+  ctx.moveTo(x, y + altura);
+  ctx.lineTo(x, y + altura - alturaActual);
+  ctx.strokeStyle = "#006400";
+  ctx.lineWidth = 10 * scale;
+  ctx.stroke();
+
+  if (progreso < 0.5) return;
+
+  ctx.beginPath();
+  ctx.ellipse(x - 40 * scale, y + altura / 1.5, 40 * scale, 20 * scale, Math.PI / 4, 0, Math.PI * 2 * Math.min(1, (progreso - 0.5) / 0.2));
+  ctx.fillStyle = "#006400";
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(x + 40 * scale, y + altura / 1.5, 40 * scale, 20 * scale, -Math.PI / 4, 0, Math.PI * 2 * Math.min(1, (progreso - 0.5) / 0.2));
+  ctx.fillStyle = "#006400";
+  ctx.fill();
+
+  if (progreso < 0.7) return;
+
+  const radioPetalo = 80 * scale;
+  const petalos = 15;
+  const escalaFlor = Math.min(1, (progreso - 0.7) / 0.3);
+
+  const gradiente = ctx.createRadialGradient(x, y, 5 * scale, x, y, radioPetalo);
+  gradiente.addColorStop(0, "#FFD700");
+  gradiente.addColorStop(1, "#FFA500");
+
+  for (let i = 0; i < petalos; i++) {
+    const angulo = (i * 2 * Math.PI) / petalos;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angulo);
+    ctx.beginPath();
+    ctx.ellipse(0, -radioPetalo / 2, radioPetalo / 2.5, radioPetalo * escalaFlor, 0, 0, Math.PI * 2);
+    ctx.fillStyle = gradiente;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  ctx.beginPath();
+  ctx.arc(x, y, 35 * escalaFlor * scale, 0, Math.PI * 2);
+  ctx.fillStyle = "#58391c";
+  ctx.fill();
+}
+
+// Brillos
+const brillos = [];
+const numBrillos = 150;
+function crearBrillo() {
+    const scale = getScale();
+    return {
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        size: (Math.random() * 2.5 + 1) * scale,
+        speed: (Math.random() * 1 + 0.5) * scale,
+        opacity: Math.random() * 0.5 + 0.5
+    };
+}
+for (let i = 0; i < numBrillos; i++) {
+    brillos.push(crearBrillo());
+}
+function animarBrillos() {
+    const scale = getScale();
+    for (let i = 0; i < brillos.length; i++) {
+        const b = brillos[i];
+        b.y += b.speed;
+        if (b.y > canvas.height) {
+            b.y = -10 * scale;
+            b.x = Math.random() * canvas.width;
+        }
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 223, 0, ${b.opacity})`;
+        ctx.shadowColor = '#FFD700';
+        ctx.shadowBlur = 15;
+        ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+}
+
+// Animación
+let florActual = 0;
+function animar() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  animarBrillos();
+
+  if (florActual < flores.length) {
+    const flor = flores[florActual];
+    flor.progreso += 0.015;
+    if (flor.progreso >= 1) {
+      flor.progreso = 1;
+      florActual++;
+    }
+  }
+
+  flores.forEach(dibujarGirasol);
+  requestAnimationFrame(animar);
+}
+
+window.onload = function() {
+    const audio = document.getElementById('background-audio');
+    audio.play().catch(error => {
+        console.log("La reproducción automática fue bloqueada.", error);
+    });
+    animar();
+};
+</script>
+
+</body>
+</html>
